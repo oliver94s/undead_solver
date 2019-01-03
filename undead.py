@@ -31,6 +31,7 @@ class Board(object):
         self.board = []
         self._init_board()
         self.generate_board(board_str)
+        self.north_count, self.east_count, self.south_count, self.west_count = self.calc_board_count(board_str)
 
     @staticmethod
     def calc_dim(board_str):
@@ -52,6 +53,19 @@ class Board(object):
         zombie_count = int(board_split[2])
 
         return ghost_count, vampire_count, zombie_count
+
+    def calc_board_count(self, board_str):
+        board_split = board_str.split(':')[1].split(',')
+
+        board_count_start = 4
+
+        top_row = board_split[board_count_start: board_count_start + self.dim_x]
+        right_col = board_split[board_count_start + self.dim_x: board_count_start + self.dim_x + self.dim_y]
+
+        bottom_row = board_split[board_count_start + self.dim_x + self.dim_y: board_count_start + (self.dim_x * 2) + self.dim_y]
+        left_col = board_split[board_count_start + (self.dim_x * 2) + self.dim_y: board_count_start + (self.dim_x * 2) + (self.dim_y * 2)]
+
+        return top_row, right_col, bottom_row, left_col
 
     def _init_board(self):
         for x in range(0, self.dim_x):
@@ -103,6 +117,7 @@ class Walker(object):
 
     def walk(self, board, row, col, direction, path=[]):
         path.append((row, col))
+        print(row, col)
         if board.board[row][col].get() == 'L':
             direction = self.left_bounce(direction)
         elif board.board[row][col].get() == 'R':
@@ -122,7 +137,8 @@ class Walker(object):
         if (row >= 0 and row < board.dim_x) and (col >= 0 and col < board.dim_y):
             self.walk(board, row, col, direction)
 
-        
+    def solve(self):
+        pass
 
     @staticmethod
     def right_bounce(direction):
@@ -159,6 +175,6 @@ if __name__ == "__main__":
     board.print_board()
 
     walkman = Walker()
-    row = 3
+    row = 0
     col = 0
     walkman.walk(board, row, col, 'east')
