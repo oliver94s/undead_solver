@@ -148,19 +148,7 @@ class Walker(object):
 
         return path
 
-    def _set_zero_case(self, board, path_traversed):
-        after_bounce = False
-        for coord in path_traversed:
-            row, col = coord
-            print(board.board[row][col].get())
-            if board.board[row][col].get() == 'R' or board.board[row][col].get() == 'L':
-                after_bounce = True
-            elif board.board[row][col].get() == ' ' and not after_bounce:
-                board.board[row][col].set('G')
-            elif board.board[row][col].get() == ' ' and after_bounce:
-                board.board[row][col].set('V')
-
-    def solve(self, board):
+    def solve_zero_case(self, board):
         for col_idx in range(0, board.dim_y):
             monster_count = board.north_count[col_idx]
             
@@ -191,6 +179,27 @@ class Walker(object):
 
                 self._set_zero_case(board, path_traversed)
 
+    def _set_zero_case(self, board, path_traversed):
+        after_bounce = False
+
+        for coord in path_traversed:
+            row, col = coord
+
+            if board.board[row][col].get() == 'R' or board.board[row][col].get() == 'L':
+                after_bounce = True
+            elif board.board[row][col].get() == ' ' and not after_bounce:
+                board.board[row][col].set('G')
+            elif board.board[row][col].get() == ' ' and after_bounce:
+                board.board[row][col].set('V')
+
+    def after_zero_solve(self, board):
+        pass
+
+    def solve(self, board):
+        self.solve_zero_case(board)
+
+
+
     @staticmethod
     def right_bounce(direction):
         if direction == 'north':
@@ -219,7 +228,7 @@ class Walker(object):
 
 
 if __name__ == "__main__":
-    test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#4x4:4,4,0,RRLLbLbRaRcR,0,3,0,0,0,3,1,0,0,4,1,0,2,1,0,0"
+    test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#7x7:11,13,4,LLRRRbRaLaLaLLaRRbRlLRLeLRaRRRb,5,0,0,0,0,0,1,6,0,4,3,0,0,2,6,5,0,0,6,1,0,0,0,5,3,5,0,0"
     board_txt = test_link.split('#')[-1]
     board = Board(board_txt)
     # print('printing board out')
