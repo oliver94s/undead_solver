@@ -31,7 +31,8 @@ class Board(object):
         self.board = []
         self._init_board()
         self.generate_board(board_str)
-        self.north_count, self.east_count, self.south_count, self.west_count = self.calc_board_count(board_str)
+        self.north_count, self.east_count, self.south_count, self.west_count = self.calc_board_monster_count(board_str)
+        print(self.north_count, self.east_count, self.south_count, self.west_count)
 
     @staticmethod
     def calc_dim(board_str):
@@ -54,16 +55,22 @@ class Board(object):
 
         return ghost_count, vampire_count, zombie_count
 
-    def calc_board_count(self, board_str):
+    def calc_board_monster_count(self, board_str):
         board_split = board_str.split(':')[1].split(',')
 
-        board_count_start = 4
+        monster_count_start = 4
+        monster_count = []
 
-        top_row = board_split[board_count_start: board_count_start + self.dim_x]
-        right_col = board_split[board_count_start + self.dim_x: board_count_start + self.dim_x + self.dim_y]
+        for mon_count in board_split[monster_count_start:]:
+            monster_count.append(int(mon_count))
 
-        bottom_row = board_split[board_count_start + self.dim_x + self.dim_y: board_count_start + (self.dim_x * 2) + self.dim_y]
-        left_col = board_split[board_count_start + (self.dim_x * 2) + self.dim_y: board_count_start + (self.dim_x * 2) + (self.dim_y * 2)]
+        top_row = monster_count[: self.dim_x]
+        right_col = monster_count[self.dim_x: self.dim_x + self.dim_y]
+
+        bottom_row = monster_count[self.dim_x + self.dim_y: (self.dim_x * 2) + self.dim_y]
+        bottom_row.reverse()
+        left_col = monster_count[(self.dim_x * 2) + self.dim_y: (self.dim_x * 2) + (self.dim_y * 2)]
+        left_col.reverse()
 
         return top_row, right_col, bottom_row, left_col
 
@@ -112,10 +119,12 @@ class Board(object):
 
 class Walker(object):
     def __init__(self):
-        self.current_x = 0
-        self.current_y = 0
+        pass
 
-    def walk(self, board, row, col, direction, path=[]):
+    def walk(self, board, row, col, direction, path=None):
+        if path is None:
+            path = []
+
         path.append((row, col))
 
         if board.board[row][col].get() == 'L':
@@ -135,12 +144,52 @@ class Walker(object):
             col -= 1
 
         if (row >= 0 and row < board.dim_x) and (col >= 0 and col < board.dim_y):
-            self.walk(board, row, col, direction)
+            self.walk(board, row, col, direction, path)
 
         return path
 
-    def solve(self):
-        pass
+    def _set_zero_case(self, board, path_traversed):
+        after_bounce = False
+        for coord in path_traversed:
+            row, col = coord
+            print(board.board[row][col].get())
+            if board.board[row][col].get() == 'R' or board.board[row][col].get() == 'L':
+                after_bounce = True
+            elif board.board[row][col].get() == ' ' and not after_bounce:
+                board.board[row][col].set('G')
+            elif board.board[row][col].get() == ' ' and after_bounce:
+                board.board[row][col].set('V')
+
+    def solve(self, board):
+        for col_idx in range(0, board.dim_y):
+            monster_count = board.north_count[col_idx]
+            
+            if monster_count == 0:
+                path_traversed = self.walk(board, 0, col_idx, 'south')
+
+                self._set_zero_case(board, path_traversed)
+
+            monster_count = board.south_count[col_idx]
+            
+            if monster_count == 0:
+                path_traversed = self.walk(board, board.dim_x - 1, col_idx, 'north')
+
+                self._set_zero_case(board, path_traversed)
+
+        for row_idx in range(0, board.dim_x):
+            monster_count = board.west_count[row_idx]
+            
+            if monster_count == 0:
+                path_traversed = self.walk(board, row_idx, 0, 'east')
+                print(path_traversed)
+                self._set_zero_case(board, path_traversed)
+
+            monster_count = board.east_count[row_idx]
+            
+            if monster_count == 0:
+                path_traversed = self.walk(board, row_idx, board.dim_y - 1, 'west')
+
+                self._set_zero_case(board, path_traversed)
 
     @staticmethod
     def right_bounce(direction):
@@ -170,13 +219,15 @@ class Walker(object):
 
 
 if __name__ == "__main__":
-    test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#4x4:5,2,4,cRdRLbLbR,2,3,1,3,3,3,1,0,0,1,4,0,0,2,3,1"
+    test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#4x4:4,4,0,RRLLbLbRaRcR,0,3,0,0,0,3,1,0,0,4,1,0,2,1,0,0"
     board_txt = test_link.split('#')[-1]
     board = Board(board_txt)
-    print('printing board out')
-    board.print_board()
+    # print('printing board out')
+    # board.print_board()
 
     walkman = Walker()
-    row = 0
-    col = 0
-    print(walkman.walk(board, row, col, 'east'))
+    # row = 0
+    # col = 2
+    # print(walkman.walk(board, row, col, 'south'))
+    walkman.solve(board)
+    board.print_board()
