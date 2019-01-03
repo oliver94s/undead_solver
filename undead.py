@@ -117,7 +117,7 @@ class Walker(object):
 
     def walk(self, board, row, col, direction, path=[]):
         path.append((row, col))
-        print(row, col)
+
         if board.board[row][col].get() == 'L':
             direction = self.left_bounce(direction)
         elif board.board[row][col].get() == 'R':
@@ -136,6 +136,8 @@ class Walker(object):
 
         if (row >= 0 and row < board.dim_x) and (col >= 0 and col < board.dim_y):
             self.walk(board, row, col, direction)
+
+        return path
 
     def solve(self):
         pass
@@ -177,4 +179,4 @@ if __name__ == "__main__":
     walkman = Walker()
     row = 0
     col = 0
-    walkman.walk(board, row, col, 'east')
+    print(walkman.walk(board, row, col, 'east'))
