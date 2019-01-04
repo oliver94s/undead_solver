@@ -34,7 +34,6 @@ class Board(object):
         self._init_board()
         self.generate_board(board_str)
         self.north_count, self.east_count, self.south_count, self.west_count = self.calc_board_monster_count(board_str)
-        print(self.north_count, self.east_count, self.south_count, self.west_count)
 
     @staticmethod
     def calc_dim(board_str):
@@ -82,7 +81,6 @@ class Board(object):
             for y in range(0, self.dim_y):
                 empty_grid = Grid()
                 self.board[x].append(empty_grid)
-        
 
     def generate_board(self, board_str):
         board_split = board_str.split(':')[1].split(',')
@@ -90,7 +88,6 @@ class Board(object):
 
         x = 0
         y = 0
-
 
         for space in board_layout:
             if space == "L" or space == "R":
@@ -110,13 +107,22 @@ class Board(object):
                         x += 1    
 
     def print_board(self):
-        x_str = []
         y_str = []
         for x in range(0, self.dim_x):
             for y in range(0, self.dim_y):
                 y_str.append(str(self.board[x][y]))
             print(''.join(y_str))
             y_str = []
+
+    def get_unused_positions(self):
+        unused_spaces = []
+
+        for row in range(0, self.dim_x):
+            for col in range(0, self.dim_y):
+                if self.board[row][col] == ' ':
+                    unused_spaces.append((row, col))
+
+        return unused_spaces
 
 
 class Walker(object):
@@ -192,8 +198,10 @@ class Walker(object):
                 after_bounce = True
             elif board.board[row][col].get() == ' ' and not after_bounce:
                 board.board[row][col].set('G')
+                board.g_count -= 1
             elif board.board[row][col].get() == ' ' and after_bounce:
                 board.board[row][col].set('V')
+                board.v_count -= 1
 
     @staticmethod
     def get_path_monster_count(board, path_traversed):
@@ -278,6 +286,56 @@ class Walker(object):
 
                 if board.east_count[row_idx] == 0:
                     self._set_zero_case(board, path_traversed)
+
+    def simple_zombie_solver_case(self, board, path_traversed):
+        """
+        Solves the cases when the count of monsters are the same on both
+        sides and matches the count of blocks
+        :param board: Board object
+        """
+        
+        start_monster_count = board
+        end_monster_count = board
+
+        for col_idx in range(0, board.dim_y):
+            monster_count = board.north_count[col_idx]
+
+            if monster_count > 0:
+                path_traversed = self.walk(board, 0, col_idx, 'south')
+
+                self._set_zero_case(board, path_traversed)
+
+            monster_count = board.south_count[col_idx]
+
+            if monster_count == 0:
+                path_traversed = self.walk(board, board.dim_x - 1, col_idx, 'north')
+
+                self._set_zero_case(board, path_traversed)
+
+        for row_idx in range(0, board.dim_x):
+            monster_count = board.west_count[row_idx]
+
+            if monster_count == 0:
+                path_traversed = self.walk(board, row_idx, 0, 'east')
+
+                self._set_zero_case(board, path_traversed)
+
+            monster_count = board.east_count[row_idx]
+
+            if monster_count == 0:
+                path_traversed = self.walk(board, row_idx, board.dim_y - 1, 'west')
+
+                self._set_zero_case(board, path_traversed)
+
+    def solve_by_process_of_elimiation(self, board):
+
+
+        unused_posistions = board.get_unused_positions()
+
+
+
+
+
 
     def solve(self, board):
         self.solve_zero_case(board)
