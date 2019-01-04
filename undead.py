@@ -1,3 +1,5 @@
+import argparse
+
 class Grid(object):
 
     def __init__(self):
@@ -169,7 +171,7 @@ class Walker(object):
             
             if monster_count == 0:
                 path_traversed = self.walk(board, row_idx, 0, 'east')
-                print(path_traversed)
+
                 self._set_zero_case(board, path_traversed)
 
             monster_count = board.east_count[row_idx]
@@ -179,7 +181,8 @@ class Walker(object):
 
                 self._set_zero_case(board, path_traversed)
 
-    def _set_zero_case(self, board, path_traversed):
+    @staticmethod
+    def _set_zero_case(board, path_traversed):
         after_bounce = False
 
         for coord in path_traversed:
@@ -192,13 +195,93 @@ class Walker(object):
             elif board.board[row][col].get() == ' ' and after_bounce:
                 board.board[row][col].set('V')
 
+    @staticmethod
+    def get_path_monster_count(board, path_traversed):
+        after_bounce = False
+        monster_count = 0
+
+        for coord in path_traversed:
+            row, col = coord
+
+            if board.board[row][col].get() == 'R' or board.board[row][col].get() == 'L':
+                after_bounce = True
+
+            elif board.board[row][col].get() == 'G':
+                if after_bounce:
+                    monster_count += 1
+
+            elif board.board[row][col].get() == 'V':
+                if not after_bounce:
+                    monster_count += 1
+
+        return monster_count
+
     def after_zero_solve(self, board):
-        pass
+        for col_idx in range(0, board.dim_y):
+            monster_count = board.north_count[col_idx]
+            
+            if monster_count > 0:
+                path_traversed = self.walk(board, 0, col_idx, 'south')
+
+                path_monster_count = self.get_path_monster_count(board, path_traversed)
+
+                board.north_count[col_idx] -= path_monster_count
+
+                if board.north_count[col_idx] < 0:
+                    raise ValueError("Monster Counts cannot be lower than 0")
+
+                if board.north_count[col_idx] == 0:
+                    self._set_zero_case(board, path_traversed)
+
+            monster_count = board.south_count[col_idx]
+
+            if monster_count > 0:
+                path_traversed = self.walk(board, board.dim_x - 1, col_idx, 'north')
+
+                path_monster_count = self.get_path_monster_count(board, path_traversed)
+
+                board.south_count[col_idx] -= path_monster_count
+
+                if board.south_count[col_idx] < 0:
+                    raise ValueError("Monster Counts cannot be lower than 0")
+
+                if board.south_count[col_idx] == 0:
+                    self._set_zero_case(board, path_traversed)
+
+        for row_idx in range(0, board.dim_x):
+            monster_count = board.west_count[row_idx]
+
+            if monster_count > 0:
+                path_traversed = self.walk(board, row_idx, 0, 'east')
+
+                path_monster_count = self.get_path_monster_count(board, path_traversed)
+
+                board.west_count[row_idx] -= path_monster_count
+
+                if board.west_count[row_idx] < 0:
+                    raise ValueError("Monster Counts cannot be lower than 0")
+
+                if board.west_count[row_idx] == 0:
+                    self._set_zero_case(board, path_traversed)
+
+            monster_count = board.east_count[row_idx]
+
+            if monster_count > 0:
+                path_traversed = self.walk(board, row_idx, board.dim_y - 1, 'west')
+
+                path_monster_count = self.get_path_monster_count(board, path_traversed)
+
+                board.east_count[row_idx] -= path_monster_count
+
+                if board.east_count[row_idx] < 0:
+                    raise ValueError("Monster Counts cannot be lower than 0")
+
+                if board.east_count[row_idx] == 0:
+                    self._set_zero_case(board, path_traversed)
 
     def solve(self, board):
         self.solve_zero_case(board)
-
-
+        self.after_zero_solve(board)
 
     @staticmethod
     def right_bounce(direction):
@@ -228,7 +311,15 @@ class Walker(object):
 
 
 if __name__ == "__main__":
-    test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#7x7:11,13,4,LLRRRbRaLaLaLLaRRbRlLRLeLRaRRRb,5,0,0,0,0,0,1,6,0,4,3,0,0,2,6,5,0,0,6,1,0,0,0,5,3,5,0,0"
+    arg_parser = argparse.ArgumentParser("Given a link it will attempt to solve the simon undead puzzle")
+
+    arg_parser.add_argument('undead_link', help='Link to the undead puzzle')
+
+    args, unknown = arg_parser.parse_known_args()
+
+
+    # test_link = "https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/undead.html#4x4:0,8,3,aRbLcLcRbL,3,0,4,3,3,3,3,0,0,4,4,0,0,0,0,1"
+    test_link = args.undead_link
     board_txt = test_link.split('#')[-1]
     board = Board(board_txt)
     # print('printing board out')
